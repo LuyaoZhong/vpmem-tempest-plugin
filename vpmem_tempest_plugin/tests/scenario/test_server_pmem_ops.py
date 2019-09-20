@@ -67,6 +67,7 @@ class TestServerWithPMEMOps(manager.ScenarioTest):
                 server=self.instance)
 
     def verify_pmem(self, instance, expect_pmem_num):
+        # check pmem devices num in xml
         conn = libvirt.open('qemu:///system')
         pmem_num = 0
         for domain in conn.listAllDomains():
@@ -80,6 +81,12 @@ class TestServerWithPMEMOps(manager.ScenarioTest):
                             pmem_num += 1
             break
         conn.close()
+        if pmem_num != expect_pmem_num:
+            raise Exception('NVDIMM device num is not as expected.')
+
+        # check pmem devices num with ndctl
+        namespaces = self.ssh_client.exec_command('ndctl list') or '[]'
+        pmem_num = len(json.loads(namespaces))
         if pmem_num != expect_pmem_num:
             raise Exception('NVDIMM device num is not as expected.')
 
